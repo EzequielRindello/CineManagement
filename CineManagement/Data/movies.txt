@@ -1,0 +1,8 @@
+Avatar|true
+Titanic|true
+El Secreto de sus Ojos|false
+Relatos Salvajes|false
+Avengers Endgame|true
+Parasite|true
+La Cienaga|false
+Nueve Reinas|false
