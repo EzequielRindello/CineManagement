@@ -2,7 +2,7 @@
  Cree el readme con la estructura del proyecto y un breve resumen de cada archivo para ayudar a entender la organizacion del codigo.
  Cada clase/metodo sigue Single Responsability Principle, y esta maximizando el paradigma clase - objeto.
 
-# Requisitos
+## Requisitos
 - Cada pelicula solo puede ser dirigida por un director. Un director puede dirigir muchas películas.
 - Puede haber máximo 10 funciones durante el día por director.
 - Las películas internacionales tienen máximo 8 funciones asignadas. Las películas nacionales, para impulsar el cine, no poseen dicho límite.
