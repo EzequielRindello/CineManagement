@@ -6,6 +6,7 @@ namespace CineManagement.UI
 {
     public class MenuService
     {
+        #region Fields and Constructor
         private readonly FunctionService _functionService;
         private readonly List<Movie> _movies;
         private readonly List<Director> _directors;
@@ -16,20 +17,28 @@ namespace CineManagement.UI
             _movies = movies;
             _directors = directors;
         }
+        #endregion
 
+        #region Menu Methods
         public void ShowMainMenu()
         {
-
             // if the movies or directors list is empty, prompt the user to add them
-            if (_movies == null || _movies.Count == 0)
+            if (_movies == null || _movies.Count == 0 || _directors == null || _directors.Count == 0)
             {
                 Console.Clear();
                 Console.WriteLine("\nNo movies/directors available.");
                 Console.WriteLine("\nPlease add movies and directors first in the respective files located at: 'Data/movies.txt' and 'Data/directors.txt'");
-                Console.WriteLine("\nExpected format (one per line): Movie Name | true/false");
-                Console.WriteLine("Example: The Godfather | false");
-                Console.WriteLine("\nExpected format for directors (one per line): Director Name");
-                Console.WriteLine("Example: Francis Ford Coppola");
+                Console.WriteLine("\nExpected format for directors (one per line):");
+                Console.WriteLine(" - Director Name");
+                Console.WriteLine("Example:");
+                Console.WriteLine("  Francis Ford Coppola");
+                Console.WriteLine("\nExpected format for movies (one per line):");
+                Console.WriteLine(" - National:       Movie Name | Director ID");
+                Console.WriteLine(" - International:  Movie Name | Director ID | INTERNATIONAL");
+                Console.WriteLine("Examples (assuming Francis Ford Coppola has ID 1):");
+                Console.WriteLine("  - El Secreto de sus Ojos | 1");
+                Console.WriteLine("  - Avatar | 1 | INTERNATIONAL");
+                Console.WriteLine("\nNote: Director ID corresponds to the line number in directors.txt");
                 Console.WriteLine();
                 return;
             }
@@ -84,8 +93,17 @@ namespace CineManagement.UI
             var movie = SelectMovie();
             if (movie == null) return;
 
-            var director = SelectDirector();
-            if (director == null) return;
+            // Automatically get the director based on the movie's DirectorId
+            var director = GetDirectorById(movie.DirectorId);
+            if (director == null)
+            {
+                Console.WriteLine($"Error: Director with ID {movie.DirectorId} not found for movie '{movie.Name}'.");
+                Console.WriteLine("Press any key to continue...");
+                Console.ReadKey();
+                return;
+            }
+
+            Console.WriteLine($"\nSelected director: {director.Name}");
 
             var date = GetDate();
             if (date == null) return;
@@ -132,8 +150,18 @@ namespace CineManagement.UI
             var movie = SelectMovie();
             if (movie == null) return;
 
-            var director = SelectDirector();
-            if (director == null) return;
+            // automatically get the director based on the movie's DirectorId
+            // to avoid user confusion and human error
+            var director = GetDirectorById(movie.DirectorId);
+            if (director == null)
+            {
+                Console.WriteLine($"Error: Director with ID {movie.DirectorId} not found for movie '{movie.Name}'.");
+                Console.WriteLine("Press any key to continue...");
+                Console.ReadKey();
+                return;
+            }
+
+            Console.WriteLine($"\nSelected director: {director.Name}");
 
             var date = GetDate();
             if (date == null) return;
@@ -201,17 +229,20 @@ namespace CineManagement.UI
             }
 
             var functions = _functionService.GetAllFunctions();
+            // order functions by date and time
+            var orderedFunctions = functions.OrderBy(f => f.Date).ThenBy(f => f.Time);
 
-            if (!functions.Any())
+            if (functions.Count > 0)
             {
-                Console.WriteLine("No functions registered.");
-            }
-            else
-            {
-                foreach (var function in functions.OrderBy(f => f.Date).ThenBy(f => f.Time))
+                // display the ordered functions
+                foreach (var function in orderedFunctions)
                 {
                     Console.WriteLine(function);
                 }
+            }
+            else
+            {
+                Console.WriteLine("No functions registered.");
             }
 
             if (waitForKey)
@@ -220,13 +251,17 @@ namespace CineManagement.UI
                 Console.ReadKey();
             }
         }
+        #endregion
 
-        private Movie SelectMovie()
+        #region Input Methods
+        private Movie? SelectMovie()
         {
             Console.WriteLine("Available movies:");
             for (int i = 0; i < _movies.Count; i++)
             {
-                Console.WriteLine($"{i + 1}. {_movies[i]}");
+                var director = GetDirectorById(_movies[i].DirectorId);
+                var directorName = director?.Name ?? "Unknown Director";
+                Console.WriteLine($"{i + 1}. {_movies[i]} - Director: {directorName}");
             }
 
             Console.Write("Select a movie: ");
@@ -241,35 +276,15 @@ namespace CineManagement.UI
             return null;
         }
 
-        private Director SelectDirector()
-        {
-            Console.WriteLine("\nAvailable directors:");
-            for (int i = 0; i < _directors.Count; i++)
-            {
-                Console.WriteLine($"{i + 1}. {_directors[i]}");
-            }
-
-            Console.Write("Select a director: ");
-            if (int.TryParse(Console.ReadLine(), out int directorIndex) &&
-                directorIndex >= 1 && directorIndex <= _directors.Count)
-            {
-                return _directors[directorIndex - 1];
-            }
-
-            Console.WriteLine("Invalid selection. Press any key to continue...");
-            Console.ReadKey();
-            return null;
-        }
-
-        private DateTime? GetDate()
+        private static DateTime? GetDate()
         {
             for (int attempts = 0; attempts < 3; attempts++)
             {
                 Console.Write("\nEnter the date (dd/MM/yyyy): ");
                 if (DateTime.TryParseExact(Console.ReadLine(), "dd/MM/yyyy",
-                    CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date))
+                    CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime InputDate))
                 {
-                    return date;
+                    return InputDate;
                 }
 
                 Console.WriteLine("Invalid date. Try again.");
@@ -280,15 +295,15 @@ namespace CineManagement.UI
             return null;
         }
 
-        private TimeSpan? GetTime()
+        private static TimeSpan? GetTime()
         {
             for (int attempts = 0; attempts < 3; attempts++)
             {
                 Console.Write("Enter the time (HH:mm): ");
                 if (TimeSpan.TryParseExact(Console.ReadLine(), @"hh\:mm",
-                    CultureInfo.InvariantCulture, out TimeSpan time))
+                    CultureInfo.InvariantCulture, out TimeSpan InputTime))
                 {
-                    return time;
+                    return InputTime;
                 }
 
                 Console.WriteLine("Invalid time. Try again.");
@@ -299,14 +314,14 @@ namespace CineManagement.UI
             return null;
         }
 
-        private decimal? GetPrice()
+        private static decimal? GetPrice()
         {
             for (int attempts = 0; attempts < 3; attempts++)
             {
                 Console.Write("Enter the price: $");
-                if (decimal.TryParse(Console.ReadLine(), out decimal price))
+                if (decimal.TryParse(Console.ReadLine(), out decimal InputPrice))
                 {
-                    return price;
+                    return InputPrice;
                 }
 
                 Console.WriteLine("Invalid price. Try again.");
@@ -316,7 +331,13 @@ namespace CineManagement.UI
             Console.ReadKey();
             return null;
         }
+        #endregion
 
-
+        #region Helper Methods
+        private Director? GetDirectorById(int directorId)
+        {
+            return _directors.FirstOrDefault(d => d.Id == directorId);
+        }
+        #endregion
     }
 }

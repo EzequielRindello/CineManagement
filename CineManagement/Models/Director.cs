@@ -2,16 +2,18 @@
 {
     public class Director
     {
+        public int Id { get; set; }
         public string Name { get; set; }
 
-        public Director(string name)
+        public Director(int id, string name)
         {
+            Id = id;
             Name = name;
         }
 
         public override string ToString()
         {
-            return Name;
+            return $"{Id}: {Name}";
         }
 
     }

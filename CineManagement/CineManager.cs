@@ -1,22 +1,24 @@
-﻿
-using CineManagement.Services;
+﻿using CineManagement.Services;
 using CineManagement.UI;
 
 namespace CineManagement
 {
     public class CinemaManager
     {
-        private FileService _fileService;
-        private FunctionService _functionService;
-        private MenuService _menuService;
+        private readonly FileService _fileService;
+        private readonly FunctionService _functionService;
+        private readonly MenuService _menuService;
 
         public CinemaManager()
         {
             _fileService = new FileService();
             _functionService = new FunctionService();
 
-            var movies = _fileService.LoadMovies();
+            // load directors from file first
             var directors = _fileService.LoadDirectors();
+
+            // upload movies passing the list of directors for validation
+            var movies = _fileService.LoadMovies(directors);
 
             _menuService = new MenuService(_functionService, movies, directors);
         }
@@ -34,6 +36,5 @@ namespace CineManagement
                 Console.ReadKey();
             }
         }
-
     }
 }
