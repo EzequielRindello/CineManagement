@@ -4,8 +4,8 @@ namespace CineManagement.Services
 {
     public class FunctionService
     {
-        private List<MovieFunction> _functions;
-        private ValidationService _validationService;
+        private readonly List<MovieFunction> _functions;
+        private readonly ValidationService _validationService;
         private int _nextId;
 
         public FunctionService()
@@ -15,32 +15,74 @@ namespace CineManagement.Services
             _nextId = 1;
         }
 
-        public List<MovieFunction> GetAllFunctions()
+        public List<MovieFunction> GetAllFunctions() => _functions;
+
+        #region Validation Methods
+        public bool ValidateDirectorDailyLimit(Director director, DateTime date)
         {
-            return _functions.ToList();
+            var count = _functions
+                .Where(f => f.Director.Name == director.Name && f.Date.Date == date.Date)
+                .Count();
+
+            return count < 10;
         }
 
+        private bool ValidateDirectorDailyLimit(Director director, DateTime date, List<MovieFunction> functions)
+        {
+            var count = functions
+                .Where(f => f.Director.Name == director.Name && f.Date.Date == date.Date)
+                .Count();
+
+            return count < 10;
+        }
+
+        public bool ValidateMovieFunctionLimit(Movie movie)
+        {
+            if (!movie.IsInternational) return true;
+
+            var count = _functions
+                .Where(f => f.Movie.Name == movie.Name)
+                .Count();
+
+            return count < 8;
+        }
+
+        private bool ValidateMovieFunctionLimit(Movie movie, List<MovieFunction> functions)
+        {
+            if (!movie.IsInternational) return true;
+
+            var count = functions
+                .Where(f => f.Movie.Name == movie.Name)
+                .Count();
+
+            return count < 8;
+        }
+        #endregion
+
+        #region ABM Methods
         public bool CreateFunction(DateTime date, TimeSpan time, decimal price, Movie movie, Director director)
         {
-            if (!_validationService.ValidateDateTime(date, time))
+            var functionDateTime = date.Add(time);
+
+            if (!ValidationService.ValidateDateTime(functionDateTime))
             {
-                Console.WriteLine("Error: Date should be future");
+                Console.WriteLine("\nError: Date should be in the future.");
                 return false;
             }
 
-            if (!_validationService.ValidatePrice(price))
+            if (!ValidationService.ValidatePrice(price))
             {
                 Console.WriteLine("Error: Price must be greater than 0.");
                 return false;
             }
 
-            if (!_validationService.ValidateDirectorDailyLimit(_functions, director, date))
+            if (!ValidateDirectorDailyLimit(director, date))
             {
                 Console.WriteLine($"Error: Director {director.Name} already has 10 functions on {date:dd/MM/yyyy}.");
                 return false;
             }
 
-            if (!_validationService.ValidateMovieFunctionLimit(_functions, movie))
+            if (!ValidateMovieFunctionLimit(movie))
             {
                 Console.WriteLine($"Error: Movie {movie.Name} already has 8 functions assigned.");
                 return false;
@@ -61,28 +103,28 @@ namespace CineManagement.Services
                 return false;
             }
 
-            // create a temporary list excluding the function being updated
             var tempFunctions = _functions.Where(f => f.Id != id).ToList();
+            var functionDateTime = date.Add(time);
 
-            if (!_validationService.ValidateDateTime(date, time))
+            if (!ValidationService.ValidateDateTime(functionDateTime))
             {
-                Console.WriteLine("Error: Date should be future");
+                Console.WriteLine("Error: Date should be in the future.");
                 return false;
             }
 
-            if (!_validationService.ValidatePrice(price))
+            if (!ValidationService.ValidatePrice(price))
             {
                 Console.WriteLine("Error: Price must be greater than 0.");
                 return false;
             }
 
-            if (!_validationService.ValidateDirectorDailyLimit(tempFunctions, director, date))
+            if (!ValidateDirectorDailyLimit(director, date, tempFunctions))
             {
                 Console.WriteLine($"Error: Director {director.Name} already has 10 functions on {date:dd/MM/yyyy}.");
                 return false;
             }
 
-            if (!_validationService.ValidateMovieFunctionLimit(tempFunctions, movie))
+            if (!ValidateMovieFunctionLimit(movie, tempFunctions))
             {
                 Console.WriteLine($"Error: Movie {movie.Name} already has 8 functions assigned.");
                 return false;
@@ -112,10 +154,10 @@ namespace CineManagement.Services
             return true;
         }
 
-        public MovieFunction GetFunctionById(int id)
+        public MovieFunction? GetFunctionById(int id)
         {
             return _functions.FirstOrDefault(f => f.Id == id);
         }
-
+        #endregion
     }
 }

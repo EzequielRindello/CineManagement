@@ -1,8 +1,8 @@
-Avatar|true
-Titanic|true
-El Secreto de sus Ojos|false
-Relatos Salvajes|false
-Avengers Endgame|true
-Parasite|true
-La Cienaga|false
-Nueve Reinas|false
+Avatar | 1 | INTERNATIONAL
+Titanic | 1 | INTERNATIONAL
+El Secreto de sus Ojos | 2
+Relatos Salvajes | 3
+Avengers Endgame | 4 | INTERNATIONAL
+Parasite | 5 | INTERNATIONAL
+La Cienaga | 6
+Nueve Reinas | 7
